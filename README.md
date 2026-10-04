@@ -1,6 +1,6 @@
 # Westeaker
 
-Westeaker is a web application for generating, transpiling, composing, and executing Grover quantum circuits using Qiskit.
+Westeaker is a web application for generating, transpiling, composing, and executing Grover quantum circuits using Qiskit. It supports both whole-program transpilation and a fragment-based approach in which independently transpiled circuit components are reused and composed to construct complete executable Grover circuits.
 
 The project is divided into two applications:
 
