@@ -1,0 +1,169 @@
+<div class="page">
+    <div class="card">
+        <h1>Grover Fragment Generation</h1>
+        <p class="description">
+            Generate and transpile the reusable fragments required to build Grover programs.
+        </p>
+        <div class="form-row">
+            <label for="qubits">
+                Qubits
+            </label>
+            <input id="qubits" type="text" [(ngModel)]="qubits" placeholder="4, 5, 6">
+            <span class="hint">Número de cúbits de los circuitos que quieres generar.</span>
+        </div>
+
+
+        <div class="form-row">
+            <label for="markableValues">
+                Markable values
+            </label>
+            <input type="text" [(ngModel)]="markableValues" placeholder="e.g. 1, 2, 3, 4, 5" [disabled]="defaultValues">
+            <span class="hint">
+                Valores que quieres marcar en los circuitos.
+            </span>
+        </div>
+
+
+        <div class="form-row">
+            <label>Searched values
+            </label>
+            <label class="checkbox-option">
+                <input type="checkbox" [(ngModel)]="defaultValues">
+                <span>Use default values
+                    <span class="hint">Si marcas esta opción, se usarán &radic;(2<sup>qubits</sup>). 
+                        Por ejemplo: para 5 cúbits se marcan el 0 (primero), el 31 (último), el 15 (la mitad), el 7 (primer cuarto) y el 23 (tercer cuarto).</span>
+                </span>
+            </label>
+
+            <label>Use customized values
+                <span class="hint">Valores que quieres buscar: se generará un circuito por backend para cada lista de
+                    valores.</span>
+            </label>
+            @for (searchedValues of searchedValuesInputs; track $index) {
+            <div class="searched-values-row">
+                <input #searchedInput type="text" [(ngModel)]="searchedValuesInputs[$index]" placeholder="e.g. 3, 4, 5"
+                    [disabled]="defaultValues"
+                    (keydown.enter)="addSearchedValuesIfLast($index); $event.preventDefault()">
+                <button type="button" (click)="removeSearchedValues($index)"
+                    [disabled]="defaultValues || searchedValuesInputs.length === 1">Remove</button>
+            </div>
+            }
+            <button type="button" (click)="addSearchedValues()" [disabled]="defaultValues">+ Add searched
+                values</button>
+        </div>
+
+
+        <div class="form-row">
+            <label>
+                Backends
+            </label>
+            <span class="hint">
+                Backends para los que quieres generar el código.
+            </span>
+            <div class="backends">
+                @for (backend of availableBackends; track backend) {
+                <label class="backend-option">
+                    <input type="checkbox" [checked]="isBackendSelected(backend)" (change)="toggleBackend(
+                backend,
+                $any($event.target).checked
+              )">
+                    <span>{{ backend }}</span>
+                </label>
+                }
+            </div>
+        </div>
+
+
+        <div class="actions">
+            <button type="button" (click)="generate()" [disabled]="loading">
+                @if (loading) {
+                Generating...
+                } @else {
+                Generate fragments
+                }
+            </button>
+        </div>
+
+
+        @if (error) {
+        <div class="error">
+            {{ error }}
+        </div>
+        }
+
+
+        @if (result) {
+        <div class="result">
+            <h2>Result</h2>
+            <pre>{{ result | json }}</pre>
+        </div>
+        }
+    </div>
+
+
+    <div class="results-section">
+        <div class="results-header">
+            <h2>
+                Generation results
+                <span class="row-count">
+                    ({{ filteredResultsRows.length }} / {{ resultsRows.length }} rows)
+                </span>
+            </h2>
+            <button type="button" (click)="loadResults()" [disabled]="resultsLoading">
+                {{ resultsLoading ? 'Loading...' : 'Load results' }}
+            </button>
+        </div>
+
+        @if (resultsError) {
+        <div class="error">
+            {{ resultsError }}
+        </div>
+        }
+
+        @if (resultsRows.length > 0) {
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        @for (column of resultsHeader; track $index) {
+                        <th class="sortable" (click)="sortResults($index)">
+                            {{ column }}
+                            <span class="sort-indicator">
+                                {{ getSortIndicator($index) }}
+                            </span>
+                        </th>
+                        }
+                    </tr>
+
+                    <!-- Filtros -->
+                    <tr class="filter-row">
+                        @for (column of resultsHeader; track $index) {
+                        <th>
+                            @if (column !== 'transpilation_time') {
+                            <select [(ngModel)]="columnFilters[$index]">
+                                <option value="">All</option>
+                                @for (value of getColumnValues($index); track value) {
+                                <option [value]="value">
+                                    {{ value }}
+                                </option>
+                                }
+                            </select>
+                            }
+                        </th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (row of filteredResultsRows; track $index) {
+                    <tr>
+                        @for (value of row; track $index) {
+                        <td>{{ value }}</td>
+                        }
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        }
+    </div>
+</div>

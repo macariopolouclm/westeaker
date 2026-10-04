@@ -1,0 +1,159 @@
+<h1>Available execution configurations</h1>
+<div class="toolbar">
+  <button type="button" (click)="loadConfigurations()">Refresh</button>
+  <button type="button" (click)="clearFilters()">Clear filters</button>
+  <button type="button" (click)="clearSelection()" [disabled]="selectedCount === 0 || executingSelected">Clear
+    selection</button>
+  <label>
+    Shots:
+    <input type="number" min="1" [(ngModel)]="shots">
+  </label>
+  <button type="button" (click)="executeSelected()" [disabled]="selectedCount === 0 || executingSelected">
+    @if (executingSelected) {
+    Executing...
+    } @else {
+    Execute selected ({{ selectedCount }})
+    }
+  </button>
+</div>
+@if (loading) {
+<p>Loading configurations...</p>
+}
+@if (error) {
+<p class="error">{{ error }}</p>
+}
+@if (!loading && configurations.length > 0) {
+<p class="configuration-count">
+  {{ filteredConfigurations.length }} / {{ configurations.length }} configurations
+</p>
+<table>
+  <thead>
+    <tr>
+      <th>Select</th>
+      <th class="sortable" (click)="sortConfigurations('backend')">
+        Backend
+        <span class="sort-indicator">{{ getSortIndicator('backend') }}</span>
+      </th>
+      <th class="sortable" (click)="sortConfigurations('filename')">
+        Filename
+        <span class="sort-indicator">{{ getSortIndicator('filename') }}</span>
+      </th>
+      <th class="sortable" (click)="sortConfigurations('qubits')">
+        Qubits
+        <span class="sort-indicator">{{ getSortIndicator('qubits') }}</span>
+      </th>
+      <th class="sortable" (click)="sortConfigurations('transpiled_first')">
+        Transpiled first
+        <span class="sort-indicator">{{ getSortIndicator('transpiled_first') }}</span>
+      </th>
+      <th class="sortable" (click)="sortConfigurations('searched_values')">
+        Searched values
+        <span class="sort-indicator">{{ getSortIndicator('searched_values') }}</span>
+      </th>
+      <th>Execute</th>
+    </tr>
+
+    <tr class="filter-row">
+      <th class="select-column">
+        <input #selectAll type="checkbox" [checked]="allFilteredSelected" [indeterminate]="someFilteredSelected"
+          (change)="toggleSelectAll(selectAll.checked)" [disabled]="executingSelected">
+      </th>
+      <th>
+        <select [(ngModel)]="backendFilter">
+          <option value="">All</option>
+          @for (value of backendValues; track value) {
+          <option [value]="value">{{ value }}</option>
+          }
+        </select>
+      </th>
+      <th>
+        <select [(ngModel)]="filenameFilter">
+          <option value="">All</option>
+          @for (value of filenameValues; track value) {
+          <option [value]="value">{{ value }}</option>
+          }
+        </select>
+      </th>
+      <th>
+        <select [(ngModel)]="qubitsFilter">
+          <option value="">All</option>
+          @for (value of qubitsValues; track value) {
+          <option [value]="value">{{ value }}</option>
+          }
+        </select>
+      </th>
+      <th>
+        <select [(ngModel)]="transpiledFirstFilter">
+          <option value="">All</option>
+          @for (value of transpiledFirstValues; track value) {
+          <option [value]="value">{{ value }}</option>
+          }
+        </select>
+      </th>
+      <th>
+        <select [(ngModel)]="searchedValuesFilter">
+          <option value="">All</option>
+          @for (value of searchedValues; track value) {
+          <option [value]="value">{{ value }}</option>
+          }
+        </select>
+      </th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (configuration of filteredConfigurations; track $index) {
+    <tr>
+      <td class="select-column">
+        <input #selection type="checkbox" [checked]="isSelected(configuration)"
+          (change)="toggleSelection(configuration, selection.checked)" [disabled]="executingSelected">
+      </td>
+      <td>{{ configuration.backend }}</td>
+      <td>
+        <button class="filename-link" type="button" (click)="showSource(configuration)">
+          {{ configuration.filename }}
+        </button>
+      </td>
+      <td>{{ configuration.qubits }}</td>
+      <td>{{ configuration.transpiled_first }}</td>
+      <td>{{ configuration.searched_values.join(', ') }}</td>
+      <td>
+        <button type="button" (click)="execute(configuration)" [disabled]="isExecuting(configuration)">
+          @if (isExecuting(configuration)) {
+          Executing...
+          } @else {
+          Execute
+          }
+        </button>
+      </td>
+    </tr>
+    }
+  </tbody>
+</table>
+}
+@if (!loading && configurations.length === 0) {
+<p>No execution configurations available.</p>
+}
+
+
+@if (showSourceModal) {
+<div class="modal-overlay" (click)="closeSource()">
+  <div class="source-modal" (click)="$event.stopPropagation()">
+    <div class="source-header">
+      <strong>{{ selectedFilename }}</strong>
+      <button type="button" class="close-button" (click)="closeSource()">×</button>
+    </div>
+    <div class="source-content">
+      @if (sourceLoading) {
+      <p>Loading...</p>
+      }
+      @if (sourceError) {
+      <p class="error">{{ sourceError }}</p>
+      }
+      @if (!sourceLoading && !sourceError) {
+      <pre><code>{{ selectedSource }}</code></pre>
+      }
+    </div>
+  </div>
+</div>
+}

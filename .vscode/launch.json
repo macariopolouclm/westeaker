@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Westeaker Backend",
+      "type": "debugpy",
+      "request": "launch",
+      "python": "/Users/macariopolousaola/virtualenvironments/qiskit/bin/python",
+      "module": "uvicorn",
+      "args": [
+        "app.main:app",
+        "--reload",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8000"
+      ],
+      "cwd": "${workspaceFolder}/be",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+.main-menu {
+  display: flex;
+  gap: 4px;
+  padding: 0 24px;
+  background: #222;
+}
+
+.main-menu a {
+  padding: 14px 20px;
+  color: #ddd;
+  text-decoration: none;
+  font-size: 15px;
+}
+
+.main-menu a:hover {
+  background: #333;
+  color: white;
+}
+
+.main-menu a.active {
+  background: #444;
+  color: white;
+  font-weight: 600;
+}
+
+.main-content {
+  padding: 24px;
+}
