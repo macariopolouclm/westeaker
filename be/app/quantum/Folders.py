@@ -57,7 +57,7 @@ class Folders:
         os.makedirs(self.root_folder + "fragments/diffusers/", exist_ok=True)
         os.makedirs(self.root_folder + "fragments/oracles/", exist_ok=True)
 
-        os.makedirs(self.root_folder + "execution_results/", exist_ok=True)
+        #os.makedirs(self.root_folder + "execution_results/", exist_ok=True)
 
         backend_names = [ "high_level"]
         for backend in backends :
@@ -69,7 +69,8 @@ class Folders:
             os.makedirs(self.root_folder + f"fragments/oracles/{backend_name}/", exist_ok=True)
             os.makedirs(self.root_folder + f"fragments/diffusers/{backend_name}/", exist_ok=True)
 
-        folders = [ "whole_grovers", "composed_grovers", "steaks" ]
+        #folders = [ "whole_grovers", "composed_grovers", "steaks" ]
+        folders = [ "whole_grovers", "composed_grovers" ]
 
         for folder in folders :
             for backend_name in backend_names :

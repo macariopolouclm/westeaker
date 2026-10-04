@@ -12,7 +12,7 @@ router = APIRouter()
 
 grover_generator_service = GroverGeneratorService()
 
-@router.post("/generateFragments")
+@router.post("/generate")
 def generate_fragments(request: GroverRequest):
     try:
         return grover_generator_service.generate_fragments(

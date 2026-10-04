@@ -38,7 +38,7 @@ class GroverGenerator:
 
         circuits = [h, *oracles, diffuser]
         for backend in backends:
-            self._transpile_from("h", backend, circuits, clbits, searched_values)
+            #self._transpile_from("h", backend, circuits, clbits, searched_values)
             self._transpile_from("oracle", backend, circuits, clbits, searched_values)
             self._transpile_from("diffuser", backend, circuits, clbits, searched_values)
 

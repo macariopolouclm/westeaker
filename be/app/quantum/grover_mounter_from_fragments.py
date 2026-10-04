@@ -22,7 +22,8 @@ class GroverMounterFromFragments:
     found_files: list[str] = field(default_factory=list, init=False)
 
     def mount_for(self, backend, clbits : int | None = None, searched_values: list[int] | None = None) :
-        for transpiled_first in ["h", "diffuser", "oracle"] :
+        #for transpiled_first in ["h", "diffuser", "oracle"] :
+        for transpiled_first in ["diffuser", "oracle"] :
             oracles_filenames = []
             h_filename = Path(self.folders.root_folder) / "fragments" / "h" / backend.name / f"h_{transpiled_first}_{clbits}"
             diffuser_filename = Path(self.folders.root_folder) / "fragments" / "diffusers" / backend.name / f"diffuser_{transpiled_first}_{clbits}"

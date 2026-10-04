@@ -15,7 +15,7 @@ export class GenerationService {
   constructor(private http: HttpClient) {}
 
   generateFragments(request: GroverRequest): Observable<any> {
-    return this.http.post(this.baseUrl + '/generateFragments', request);
+    return this.http.post(this.baseUrl + '/generate', request);
   }
 
   getResults(): Observable<string> {
