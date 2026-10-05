@@ -22,6 +22,8 @@ export class GenerationComponent implements OnInit {
   searchedValuesInputs: string[] = [''];
   defaultValues = false;
 
+  repetitions = 10;
+
   availableBackends = [
     'aer_simulator',
     'fake_marrakesh',
@@ -83,6 +85,7 @@ export class GenerationComponent implements OnInit {
       markable_values: this.parseValues(this.markableValues),
       backends: this.selectedBackends,
       default_values: this.defaultValues,
+      repetitions: this.repetitions,
       ...(this.defaultValues ? {} : { searched_values: this.parseSearchedValues() })
     };
 

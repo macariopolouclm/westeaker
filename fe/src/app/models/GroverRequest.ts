@@ -4,4 +4,5 @@ export interface GroverRequest {
   backends: string[] | null;
   searched_values?: number[][];
   default_values: boolean;
+  repetitions: number;
 }

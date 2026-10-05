@@ -20,7 +20,8 @@ def generate_fragments(request: GroverRequest):
             backend_names=request.backends,
             markable_values=request.markable_values, 
             searched_values = request.searched_values,
-            default_values = request.default_values
+            default_values = request.default_values,
+            repetitions=request.repetitions
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

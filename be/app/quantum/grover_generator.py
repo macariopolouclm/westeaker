@@ -25,7 +25,7 @@ class GroverGenerator:
         init=False
     )
 
-    def generate_fragments(self, backends, clbits, searched_values: list[int]) :
+    def generate_fragments(self, backends, clbits, searched_values: list[int])    :
         self.folders.create(backends, False)
         self.generated_files = []
         self.found_files = []

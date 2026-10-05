@@ -74,6 +74,8 @@
 
 
         <div class="actions">
+            <span class="hint">Number of times the generation/transpilation will be repeated for each configuration.</span>
+            <input id="repetitions" type="number" min="1" [(ngModel)]="repetitions">
             <button type="button" (click)="generate()" [disabled]="loading">
                 @if (loading) {
                 Generating...
@@ -82,6 +84,7 @@
                 }
             </button>
         </div>
+
 
 
         @if (error) {

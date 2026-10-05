@@ -7,6 +7,7 @@ class GroverRequest(BaseModel):
     backends: list[str] | None = None
     searched_values: list[list[int]] = Field(default_factory=list)
     default_values: bool = False
+    repetitions: int = Field(default=10, gt=0)
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -15,7 +16,8 @@ class GroverRequest(BaseModel):
                 "markable_values": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
                 "backends": ["aer_simulator"],
                 "searched_values": [[3], [4], [3, 4, 5]],
-                "default_values" : False
+                "default_values" : False,
+                "repetitions": 10
             }
         }
     )
