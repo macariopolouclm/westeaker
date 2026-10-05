@@ -10,7 +10,6 @@ from qiskit.qasm2 import dumps
 
 from app.quantum.CircuitsAndCode import generate_subcircuit, load_module, _load_module
 from app.quantum.Folders import Folders
-from app.quantum.file_utils import get_transpilation_time, get_initial_layout
 from app.quantum.result_utils import save_result
 
 @dataclass
@@ -120,12 +119,12 @@ class GroverMounterFromFragments:
         self.folders.save_text(qasm_filename, dumps(qc))
 
         ser_filename = target_file.with_suffix(".ser")
-        self.folders.dump(ser_filename, qc)
+        #self.folders.dump(ser_filename, qc)
 
         self._generated(target_file)
         self._generated(transpilation_time_filename)
         self._generated(qasm_filename)
-        self._generated(ser_filename)
+        #self._generated(ser_filename)
 
         return target_file, transpilation_time, gates, depth
 

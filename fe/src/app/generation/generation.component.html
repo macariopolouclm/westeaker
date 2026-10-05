@@ -1,15 +1,15 @@
 <div class="page">
     <div class="card">
-        <h1>Grover Fragment Generation</h1>
+        <h1>Grover Code Generation</h1>
         <p class="description">
-            Generate and transpile the reusable fragments required to build Grover programs.
+            Generate and transpile whole Grover circuits and reusable fragments required to build Grover programs.
         </p>
         <div class="form-row">
             <label for="qubits">
                 Qubits
             </label>
             <input id="qubits" type="text" [(ngModel)]="qubits" placeholder="4, 5, 6">
-            <span class="hint">Número de cúbits de los circuitos que quieres generar.</span>
+            <span class="hint">Number of qubits of the circuits to be generated.</span>
         </div>
 
 
@@ -19,7 +19,7 @@
             </label>
             <input type="text" [(ngModel)]="markableValues" placeholder="e.g. 1, 2, 3, 4, 5" [disabled]="defaultValues">
             <span class="hint">
-                Valores que quieres marcar en los circuitos.
+                Values you want to mark in the circuits.
             </span>
         </div>
 
@@ -30,14 +30,13 @@
             <label class="checkbox-option">
                 <input type="checkbox" [(ngModel)]="defaultValues">
                 <span>Use default values
-                    <span class="hint">Si marcas esta opción, se usarán &radic;(2<sup>qubits</sup>). 
-                        Por ejemplo: para 5 cúbits se marcan el 0 (primero), el 31 (último), el 15 (la mitad), el 7 (primer cuarto) y el 23 (tercer cuarto).</span>
+                    <span class="hint">If you check this option, the default values will be used: &radic;(2<sup>qubits</sup>). 
+                        For example: for 5 qubits, the values 0 (first), 31 (last), 15 (middle), 7 (first quarter) and 23 (third quarter) will be marked.</span>
                 </span>
             </label>
 
             <label>Use customized values
-                <span class="hint">Valores que quieres buscar: se generará un circuito por backend para cada lista de
-                    valores.</span>
+                <span class="hint">Values you want to search for: a circuit will be generated for each backend and list of values.</span>
             </label>
             @for (searchedValues of searchedValuesInputs; track $index) {
             <div class="searched-values-row">
@@ -58,7 +57,7 @@
                 Backends
             </label>
             <span class="hint">
-                Backends para los que quieres generar el código.
+                Backends for which you want to generate the code.
             </span>
             <div class="backends">
                 @for (backend of availableBackends; track backend) {

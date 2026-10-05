@@ -49,7 +49,9 @@ export class GenerationComponent implements OnInit {
       this.qubits = request.qubits.join(', ');
       this.markableValues = request.markable_values.join(', ');
       this.selectedBackends = request.backends ?? [];
-      this.searchedValuesInputs = request.searched_values?.map(values => values.join(', ')) ?? [''];
+      const searchedValues = request.searched_values?.map(values => values.join(', ')) ?? [];
+      this.searchedValuesInputs = searchedValues.length > 0 ? searchedValues : [''];
+      //this.searchedValuesInputs = request.searched_values?.map(values => values.join(', ')) ?? [''];
       this.defaultValues = request.default_values;
     }
   }
@@ -118,7 +120,11 @@ export class GenerationComponent implements OnInit {
   }
 
   removeSearchedValues(index: number): void {
-    this.searchedValuesInputs.splice(index, 1);
+    if (this.searchedValuesInputs.length > 1) {
+      this.searchedValuesInputs.splice(index, 1);
+    } else {
+      this.searchedValuesInputs[0] = '';
+    }
   }
 
   toggleBackend(backend: string, checked: boolean): void {

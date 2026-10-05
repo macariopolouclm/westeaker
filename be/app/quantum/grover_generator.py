@@ -49,7 +49,7 @@ class GroverGenerator:
         h = circuits[0]
         oracles = circuits[1:-1]
         diffuser = circuits[-1]
-        if transpile_first == "h":
+        if transpile_first == "h": # No se transpila desd H porque los resultados son un desastre 
             initial_layout, target_filename, transpilation_time, gates, depth = self._initial_transpile_and_save(h, backend, "h", "h", transpile_first, clbits)
             save_result(backend, target_filename, "h", transpile_first, clbits, transpilation_time, None, gates, depth)
             for index, oracle in enumerate(oracles):
@@ -104,8 +104,8 @@ class GroverGenerator:
         self._generated(python_file)
         self.folders.save_text(qasm_file, dumps(qc))
         self._generated(qasm_file)
-        self.folders.dump(ser_file, qc)
-        self._generated(ser_file)
+        #self.folders.dump(ser_file, qc)
+        #self._generated(ser_file)
         if initial_layout is not None :
             self.folders.save_text(il_file, ", ".join(map(str, initial_layout)))
             self._generated(il_file)
@@ -144,7 +144,7 @@ class GroverGenerator:
             path = Path(target_filename)
             transpilation_time_filename = path.parent / f"{path.stem}.transpilation_time.txt"
             transpilation_time = float(transpilation_time_filename.read_text(encoding="utf-8").strip())
-            return initial_layout, target_filename, transpilation_time
+            return initial_layout, target_filename, transpilation_time, 0, 0
         transpiled_qc, initial_layout, transpilation_time = self._initial_transpile_for(circuit, backend)
         code = generate_subcircuit(transpiled_qc, "get_qc", initial_layout, clbits)
         self._save_artifacts(
@@ -166,7 +166,7 @@ class GroverGenerator:
             path = Path(target_filename)
             transpilation_time_filename = path.parent / f"{path.stem}.transpilation_time.txt"
             transpilation_time = float(transpilation_time_filename.read_text(encoding="utf-8").strip())
-            return target_filename, transpilation_time
+            return target_filename, transpilation_time, 0, 0
         transpiled_qc, transpilation_time = self._transpile_for(circuit, backend, initial_layout=initial_layout)
         code = generate_subcircuit(transpiled_qc, "get_qc", initial_layout, clbits)
         self._save_artifacts(
