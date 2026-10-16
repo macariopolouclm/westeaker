@@ -22,7 +22,7 @@ class GroverMounterFromFragments:
 
     def mount_for(self, backend, clbits : int | None = None, searched_values: list[int] | None = None) :
         #for transpiled_first in ["h", "diffuser", "oracle"] :
-        for transpiled_first in ["diffuser", "oracle"] :
+        for transpiled_first in ["diffuser"] :
             oracles_filenames = []
             h_filename = Path(self.folders.root_folder) / "fragments" / "h" / backend.name / f"h_{transpiled_first}_{clbits}"
             diffuser_filename = Path(self.folders.root_folder) / "fragments" / "diffusers" / backend.name / f"diffuser_{transpiled_first}_{clbits}"
@@ -76,7 +76,7 @@ class GroverMounterFromFragments:
             num_qubits = backend.num_qubits
 
         target_file = target_folder / f"{target_folder.name}.py"
-        iterations = max(1, round((math.pi / 4) * math.sqrt((2 ** clbits) / len(searched_values))))
+        iterations = max(1, math.trunc((math.pi / 4) * math.sqrt((2 ** clbits) / len(searched_values))))
 
         with target_file.open("w", encoding="utf-8") as f:
             f.write("from qiskit import QuantumCircuit\n\n")

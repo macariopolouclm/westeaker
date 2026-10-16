@@ -29,7 +29,7 @@ class WholeGroverGenerator:
     def generate_files(self, backend, searched_values: list[int]) :
         self.generated_files = []
 
-        iterations = max(1, round((math.pi / 4) * math.sqrt((2 ** self.clbits) / len(searched_values))))
+        iterations = max(1, math.trunc((math.pi / 4) * math.sqrt((2 ** self.clbits) / len(searched_values))))
 
         qc = self.generate_at_high_level(searched_values, iterations)
         values = "_".join(map(str, sorted(searched_values)))
