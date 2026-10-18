@@ -3,16 +3,13 @@ from pathlib import Path
 
 from app.quantum.Folders import Folders
 
-from app.quantum.backends import create_backends
 from app.quantum.grover_executor import GroverExecutor
-
+from app.quantum.BackendWrapper import BackendWrapper
 
 class GroverExecutionService:
 
-    def execute(self, qubits: list[int], searched_values: list[int], backend_names: list[str] | None = None,
+    def execute(self, qubits: list[int], searched_values: list[int], backends: list[BackendWrapper] | None = None,
             shots: list[int] = [1024], transpiled_firsts : list[str] | None = None):
-
-        backends = create_backends(backend_names)
 
         executor = GroverExecutor()
         for current_shots in shots:
@@ -31,16 +28,10 @@ class GroverExecutionService:
             "status": "completed"
         }
 
-    def execute_file(self, backend_name: str, filename: str, origin: str,
+    def execute_file(self, backend : BackendWrapper, filename: str, origin: str,
                  searched_values: list[int], shots: int = 1024):
 
-        backends = create_backends([backend_name])
-        if not backends:
-            raise ValueError(f"Backend not found: {backend_name}")
-        
-        backend = backends[0]
         executor = GroverExecutor()
-
         return executor.execute_file(
             backend=backend,
             filename=filename,

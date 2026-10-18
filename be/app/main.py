@@ -1,15 +1,22 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.api import executions, generation
+from app.quantum.backends import initialize_backends
 from app.api import executions
 from app.api import generation
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    initialize_backends()
+    yield
 
-app = FastAPI(title="Westeaker API", version="0.1.0")
+app = FastAPI(title="Westeaker API", version="0.1.0", lifespan=lifespan)
 
-origins = [
-    "http://localhost:4200",
-]
+origins = [ "http://localhost:4200" ]
+
 
 app.add_middleware(
     CORSMiddleware,

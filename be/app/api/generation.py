@@ -7,17 +7,23 @@ from fastapi.responses import FileResponse
 from app.schemas.generation import GroverRequest
 from app.services.grover_service import GroverGeneratorService
 from app.quantum.Folders import Folders
+from app.quantum.backends import get_available_backends, get_backends
 
 router = APIRouter()
 
 grover_generator_service = GroverGeneratorService()
 
+@router.get("/backends")
+def backends():
+    return get_available_backends()
+
 @router.post("/generate")
 def generate_fragments(request: GroverRequest):
     try:
-        return grover_generator_service.generate_fragments(
+        backends = get_backends(request.backends)
+        return grover_generator_service.generate_code(
             qubits=request.qubits, 
-            backend_names=request.backends,
+            backends=backends,
             markable_values=request.markable_values, 
             searched_values = request.searched_values,
             default_values = request.default_values,

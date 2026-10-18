@@ -5,7 +5,7 @@ from typing import Literal
 from app.schemas.execution import GroverExecutionRequest
 from app.schemas.execution_file_request import ExecuteFileRequest
 from app.services.grover_execution_service import GroverExecutionService
-
+from app.quantum.backends import get_backends, find_backend
 
 router = APIRouter()
 
@@ -15,10 +15,11 @@ grover_execution_service = GroverExecutionService()
 @router.post("/execute")
 def execute_grover(request: GroverExecutionRequest):
     try:
+        backends = get_backends(request.backends)
         return grover_execution_service.execute(
             qubits=request.qubits,
             searched_values=request.searched_values,
-            backend_names=request.backends,
+            backend_names=backends,
             shots=request.shots,
             transpiled_firsts = request.transpiled_firsts
         )
@@ -31,8 +32,9 @@ def execute_grover(request: GroverExecutionRequest):
 @router.post("/executeFile")
 def execute_file(request: ExecuteFileRequest):
     try:
+        backend = find_backend(request.backend)
         return grover_execution_service.execute_file(
-            backend_name=request.backend,
+            backend=backend,
             filename=request.filename,
             origin=request.origin,
             searched_values=request.searched_values,
@@ -41,10 +43,10 @@ def execute_file(request: ExecuteFileRequest):
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
-
+    except Exception as exception:
+        raise HTTPException(status_code=500, detail=str(exception))
 
 
 @router.get("/configurations")

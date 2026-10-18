@@ -1,19 +1,18 @@
 import math
 from pathlib import Path
 
-from app.quantum.backends import create_backends
 from app.quantum.grover_generator import GroverGenerator
 from app.quantum.grover_mounter_from_fragments import GroverMounterFromFragments
 from app.quantum.grover_whole_generator import WholeGroverGenerator
+from app.quantum.BackendWrapper import BackendWrapper
+
 
 class GroverGeneratorService:
 
-    def generate_fragments(self, qubits: list[int], markable_values: list[int], searched_values: list[list[int]], default_values: bool = False, backend_names: list[str] | None = None, repetitions: int = 10):
-        
-        backends = create_backends(backend_names)
-
+    def generate_code(self, qubits: list[int], markable_values: list[int], searched_values: list[list[int]], default_values: bool = False, backends: list[BackendWrapper] | None = None, repetitions: int = 10):
         generated_files = []
         found_files = []
+        failed_backends = []
 
         for repetition in range(1, repetitions + 1):  # Repeat the process specified number of times
             for clbits in qubits:
@@ -21,26 +20,38 @@ class GroverGeneratorService:
                     searched_values = self._get_default_searched_values(clbits)
                     markable_values = searched_values[-1].copy()
 
-
                 generator = GroverGenerator()
-                generated, found = generator.generate_fragments(backends, clbits, markable_values)
+                generated, found, local_failed_backends = generator.generate_fragments(backends, clbits, markable_values)
 
                 generated_files.extend(generated)
                 found_files.extend(found)
+                failed_backends.extend(local_failed_backends)
+
+                failed_names = {failed["name"] for failed in failed_backends}
+                valid_backends = [backend for backend in backends if backend.name not in failed_names]
 
                 fragments_mounter = GroverMounterFromFragments()
-                for backend in backends:
-                    for current_searched_values in searched_values:
-                        fragments_mounter.mount_for(backend, clbits=clbits, searched_values=current_searched_values)
-                    generated_files.extend(fragments_mounter.generated_files)
-                    found_files.extend(fragments_mounter.found_files)
+                for backend in valid_backends:
+                    try :
+                        for current_searched_values in searched_values:
+                            fragments_mounter.mount_for(backend, clbits=clbits, searched_values=current_searched_values)
+                        generated_files.extend(fragments_mounter.generated_files)
+                        found_files.extend(fragments_mounter.found_files)
+                    except Exception as exception:
+                        failed_backends.append({
+                            "name": backend.name,
+                            "provider": backend.provider,
+                            "error": str(exception)
+                        })
+                        failed_names = {failed["name"] for failed in failed_backends}
 
-
-                for backend in backends:
+                valid_backends = [backend for backend in backends if (backend.provider, backend.name) not in failed_names]
+                for backend in valid_backends:
                     whole_mounter = WholeGroverGenerator(clbits)
                     for current_searched_values in searched_values:
-                        generated_filenames = whole_mounter.generate_files(backend, current_searched_values)
+                        generated_filenames, local_failed_backends = whole_mounter.generate_files(backend, current_searched_values)
                         generated_files.extend(generated_filenames)
+                        failed_backends.extend(local_failed_backends)
 
                 # Borrar los files de generated cuando repetitions >1
                 if repetitions > 1 and repetition < repetitions:
@@ -58,7 +69,8 @@ class GroverGeneratorService:
                 for backend in backends
             ],
             "generated_files": generated_files,
-            "found_files": found_files
+            "found_files": found_files,
+            "failed_backends" : failed_backends
         }
 
 

@@ -1,3 +1,5 @@
+import { BackendInfo } from "./BackendInfo";
+
 export interface ExecuteFileRequest {
   backend: string;
   filename: string;

@@ -103,7 +103,8 @@
   </thead>
   <tbody>
     @for (configuration of filteredConfigurations; track $index) {
-    <tr>
+    <tr [class.configuration-failed]="isConfigurationFailed(configuration)" 
+      [class.configuration-success]="isConfigurationSuccessful(configuration)" [title]="getConfigurationError(configuration)">
       <td class="select-column">
         <input #selection type="checkbox" [checked]="isSelected(configuration)"
           (change)="toggleSelection(configuration, selection.checked)" [disabled]="executingSelected">

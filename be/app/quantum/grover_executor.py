@@ -12,30 +12,31 @@ from app.quantum.file_utils import get_transpilation_time, check_exist
 
 from app.quantum.qiskit_executor import run 
 
+from app.quantum.BackendWrapper import BackendWrapper
 from qiskit import QuantumCircuit
 
 @dataclass
 class GroverExecutor():
 
-    def execute_from_fragments(self, backend, qubits: int, searched_values: list[int], shots: int, transpiled_first : str | None = None):
+    def execute_from_fragments(self, backend : BackendWrapper, qubits: int, searched_values: list[int], shots: int, transpiled_first : str | None = None):
         common_fragment = f"grover_{transpiled_first}_{qubits}_{'_'.join(map(str, searched_values))}"
         python_filename = f"{Folders().root_folder}composed_grovers/{backend.name}/{common_fragment}/{common_fragment}.py"
         module = load_module(python_filename)
         qc = module.get_qc()
-        counts, execution_time = run(backend, qc, shots)
+        counts, execution_time = run(backend.backend, qc, shots)
         error = self.calculate_error(counts, searched_values)
         self.save_execution_result(backend.name, python_filename, shots, execution_time, error)
         
 
-    def execute_whole(self, backend, qubits: int, searched_values: list[int], shots: int):
+    def execute_whole(self, backend : BackendWrapper, qubits: int, searched_values: list[int], shots: int):
             python_filename = f"{Folders().root_folder}whole_grovers/{backend.name}/grover_whole_{qubits}_{'_'.join(map(str, searched_values))}.py"
             module = load_module(python_filename)
             qc = module.qc
-            counts, execution_time = run(backend, qc, shots)
+            counts, execution_time = run(backend.backend, qc, shots)
             error = self.calculate_error(counts, searched_values)
             self.save_execution_result(backend.name, python_filename, shots, execution_time, error)
 
-    def execute_file(self, backend, filename: str, origin: str,
+    def execute_file(self, backend : BackendWrapper, filename: str, origin: str,
                     searched_values: list[int], shots: int):
 
         root_folder = Path(Folders().root_folder)
@@ -61,7 +62,7 @@ class GroverExecutor():
         else :
             qc = module.qc
 
-        counts, execution_time = run(backend, qc, shots)
+        counts, execution_time = run(backend.backend, qc, shots)
         error = self.calculate_error(counts, searched_values)
         self.save_execution_result(backend.name, python_filename, shots, execution_time, error)
 
@@ -134,7 +135,8 @@ class GroverExecutor():
 
         execution_row["shots"] = str(shots)
         execution_row["execution_time"] = str(execution_time)
-        execution_row["error"] = str(error)
+        #execution_row["error"] = str(error)
+        execution_row["error"] = f"{error:g}".replace(".", ",")
 
         with results_filename.open("w", encoding="utf-8", newline="") as file:
             writer = csv.DictWriter(file, fieldnames=fieldnames, delimiter="\t")

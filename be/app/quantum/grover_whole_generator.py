@@ -10,6 +10,7 @@ from qiskit.qasm2 import dumps
 from app.quantum.CircuitsAndCode import generate_subcircuit, load_module
 from app.quantum.Folders import Folders
 from app.quantum.result_utils import save_result
+from app.quantum.BackendWrapper import BackendWrapper
 
 @dataclass
 class WholeGroverGenerator:
@@ -26,26 +27,35 @@ class WholeGroverGenerator:
     def __post_init__(self) :
         self.clbits = self.qubits
 
-    def generate_files(self, backend, searched_values: list[int]) :
+    def generate_files(self, backend : BackendWrapper, searched_values: list[int]) :
         self.generated_files = []
+        failed_backends = []
 
         iterations = max(1, math.trunc((math.pi / 4) * math.sqrt((2 ** self.clbits) / len(searched_values))))
 
         qc = self.generate_at_high_level(searched_values, iterations)
         values = "_".join(map(str, sorted(searched_values)))
         python_file_name = Path(self.folders.root_folder) / "whole_grovers" / "high_level" / f"grover_whole_{self.qubits}_{values}.py"
-        code = generate_subcircuit(qc, None, cl_bits=self.qubits)
+        code = generate_subcircuit(backend, qc, None, cl_bits=self.qubits)
         self.folders.save_text(python_file_name, code)
 
-        python_file_name, transpilation_time, gates, depth = self._generate_for(backend, qc, searched_values)
-        save_result(backend, python_file_name, "whole_grover", "", self.clbits, transpilation_time, searched_values, gates, depth)
-        return self.generated_files
+        try :
+            python_file_name, transpilation_time, gates, depth = self._generate_for(backend, qc, searched_values)
+            save_result(backend, python_file_name, "whole_grover", "", self.clbits, transpilation_time, searched_values, gates, depth)
+        except Exception as exception:
+                        failed_backends.append({
+                            "name": backend.name,
+                            "provider": backend.provider,
+                            "error": str(exception)
+                        })
+                        print(f"Error generating for {backend.name}: {exception}")
+        return self.generated_files, failed_backends
 
-    def _generate_for(self, backend, qc: QuantumCircuit, searched_values):
+    def _generate_for(self, backend : BackendWrapper, qc: QuantumCircuit, searched_values):
         values = "_".join(map(str, sorted(searched_values)))
         python_file_name = Path(self.folders.root_folder) / "whole_grovers" / f"{backend.name}" / f"grover_whole_{self.qubits}_{values}.py"
         transpiled_qc, transpilation_time, gates, depth = self._transpile_for(qc, backend, python_file_name, initial_layout=None)
-        code = generate_subcircuit(transpiled_qc, function_name=None, initial_layout=None, cl_bits=self.qubits)
+        code = generate_subcircuit(backend, transpiled_qc, function_name=None, initial_layout=None, cl_bits=self.qubits)
         self.folders.save_text(python_file_name, code)
         self._generated(python_file_name)
         return python_file_name, transpilation_time, gates, depth
@@ -86,9 +96,9 @@ class WholeGroverGenerator:
         return qc
         
 
-    def _transpile_for(self, circuit: QuantumCircuit, backend, file_name, initial_layout, optimization_level = 3) :
+    def _transpile_for(self, circuit: QuantumCircuit, backend : BackendWrapper, file_name, initial_layout, optimization_level = 3) :
         transpilation_time = time.time()
-        qc = transpile(circuit, backend,
+        qc = transpile(circuit, backend.backend,
                optimization_level=optimization_level, 
                initial_layout = initial_layout
         )

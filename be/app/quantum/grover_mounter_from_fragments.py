@@ -8,9 +8,10 @@ import importlib.util
 from qiskit import QuantumCircuit
 from qiskit.qasm2 import dumps
 
-from app.quantum.CircuitsAndCode import generate_subcircuit, load_module, _load_module
+from app.quantum.CircuitsAndCode import load_module
 from app.quantum.Folders import Folders
 from app.quantum.result_utils import save_result
+from app.quantum import BackendWrapper
 
 @dataclass
 class GroverMounterFromFragments:
@@ -20,7 +21,7 @@ class GroverMounterFromFragments:
     generated_files: list[str] = field(default_factory=list, init=False)
     found_files: list[str] = field(default_factory=list, init=False)
 
-    def mount_for(self, backend, clbits : int | None = None, searched_values: list[int] | None = None) :
+    def mount_for(self, backend : BackendWrapper, clbits : int | None = None, searched_values: list[int] | None = None) :
         #for transpiled_first in ["h", "diffuser", "oracle"] :
         for transpiled_first in ["diffuser"] :
             oracles_filenames = []
@@ -34,7 +35,7 @@ class GroverMounterFromFragments:
             save_result(backend, target_file, "from_fragments", transpiled_first, clbits, transpilation_time, searched_values, gates, depth)
 
 
-    def mount_from_fragments(self, backend, transpiled_first, h_filename, oracles_filenames, diffuser_filename, clbits, searched_values) :
+    def mount_from_fragments(self, backend : BackendWrapper, transpiled_first, h_filename, oracles_filenames, diffuser_filename, clbits, searched_values) :
         searched_values_str = '_'.join(map(str, searched_values))
 
         target_folder = Path(self.folders.root_folder) / "composed_grovers" / backend.name / f"grover_{transpiled_first}_{clbits}_{searched_values_str}"

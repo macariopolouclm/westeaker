@@ -2,7 +2,9 @@ import { Component, ElementRef, OnInit, QueryList, ViewChildren } from '@angular
 import { FormsModule } from '@angular/forms';
 import { JsonPipe } from '@angular/common';
 import { GenerationService } from '../generation-service.service';
-import { GroverRequest } from '../models/GroverRequest';
+import { GroverRequest, SavedGroverRequest } from '../models/GroverRequest';
+import { BackendInfo } from '../models/BackendInfo';
+import { FailedBackend } from '../models/FailedBackend';
 
 
 @Component({
@@ -17,21 +19,15 @@ export class GenerationComponent implements OnInit {
   @ViewChildren('searchedInput') searchedInputs!: QueryList<ElementRef<HTMLInputElement>>;
 
   qubits = '4, 5, 6';
+  availableBackends: BackendInfo[] = [];
 
   markableValues = '1, 2, 3, 4, 5';
   searchedValuesInputs: string[] = [''];
   defaultValues = false;
 
-  repetitions = 10;
+  repetitions = 1;
 
-  availableBackends = [
-    'aer_simulator',
-    'fake_marrakesh',
-    'fake_brisbane',
-    'fake_fez'
-  ];
-
-  selectedBackends: string[] = ['fake_marrakesh'];
+  selectedBackends: BackendInfo[] = [];
 
   loading = false;
   error = '';
@@ -41,13 +37,16 @@ export class GenerationComponent implements OnInit {
   resultsHeader: string[] = [];
   resultsLoading = false;
   resultsError = '';
+  failedBackends: FailedBackend[] = [];
 
   constructor(private generationService: GenerationService) { }
 
   ngOnInit(): void {
+    this.getBackends()
+
     const savedRequest = localStorage.getItem('generationRequest');
     if (savedRequest) {
-      const request: GroverRequest = JSON.parse(savedRequest);
+      const request: SavedGroverRequest = JSON.parse(savedRequest);
       this.qubits = request.qubits.join(', ');
       this.markableValues = request.markable_values.join(', ');
       this.selectedBackends = request.backends ?? [];
@@ -55,11 +54,25 @@ export class GenerationComponent implements OnInit {
       this.searchedValuesInputs = searchedValues.length > 0 ? searchedValues : [''];
       //this.searchedValuesInputs = request.searched_values?.map(values => values.join(', ')) ?? [''];
       this.defaultValues = request.default_values;
+      this.repetitions = request.repetitions ?? 10;
+      this.failedBackends = request.failed_backends ?? [];
     }
+  }
+
+  getBackends() {
+    this.generationService.getBackends().subscribe(
+      backends => {
+        this.availableBackends = backends
+      },
+      error => {
+        console.error(error)
+      }
+    );
   }
 
   generate(): void {
     this.error = '';
+    this.failedBackends = [];
     this.result = null;
 
     const qubits = this.parseValues(this.qubits);
@@ -96,6 +109,11 @@ export class GenerationComponent implements OnInit {
     this.generationService.generateFragments(request).subscribe({
       next: response => {
         this.result = response;
+        this.failedBackends = response.failed_backends ?? []
+        localStorage.setItem('generationRequest', JSON.stringify({
+          ...request,
+          failed_backends: this.failedBackends
+        }));
         this.loading = false;
       },
 
@@ -108,6 +126,14 @@ export class GenerationComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  isBackendFailed(backend: BackendInfo): boolean {
+    return this.failedBackends.some(failed => failed.name === backend.name);
+  }
+
+  getBackendFailure(backend: BackendInfo): string {
+    return this.failedBackends.find(failed => failed.name === backend.name)?.error ?? '';
   }
 
   addSearchedValues(): void {
@@ -130,20 +156,18 @@ export class GenerationComponent implements OnInit {
     }
   }
 
-  toggleBackend(backend: string, checked: boolean): void {
+  toggleBackend(backend: BackendInfo, checked: boolean): void {
     if (checked) {
-      if (!this.selectedBackends.includes(backend)) {
+      if (!this.isBackendSelected(backend)) {
         this.selectedBackends.push(backend);
       }
     } else {
-      this.selectedBackends = this.selectedBackends.filter(
-        value => value !== backend
-      );
+      this.selectedBackends = this.selectedBackends.filter(value => value.name !== backend.name);
     }
   }
 
-  isBackendSelected(backend: string): boolean {
-    return this.selectedBackends.includes(backend);
+  isBackendSelected(backend: BackendInfo): boolean {
+    return this.selectedBackends.some(selected => selected.name === backend.name);
   }
 
   private parseSearchedValues(): number[][] {
@@ -198,6 +222,13 @@ export class GenerationComponent implements OnInit {
         this.resultsLoading = false;
       }
     });
+  }
+
+  selectAllBackends(): void {
+    this.selectedBackends = [...this.availableBackends];
+  }
+  invertBackendSelection(): void {
+    this.selectedBackends = this.availableBackends.filter(backend => !this.isBackendSelected(backend));
   }
 
 
@@ -264,5 +295,5 @@ export class GenerationComponent implements OnInit {
         .filter(value => value !== undefined && value !== '')
     )].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
   }
-  
+
 }

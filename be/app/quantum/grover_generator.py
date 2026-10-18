@@ -9,6 +9,7 @@ from app.quantum.CircuitsAndCode import generate_subcircuit
 from app.quantum.Folders import Folders
 from app.quantum.high_level_generator import HighLevelGenerator
 from app.quantum.result_utils import save_result
+from app.quantum.BackendWrapper import BackendWrapper
 
 @dataclass
 class GroverGenerator:
@@ -25,10 +26,11 @@ class GroverGenerator:
         init=False
     )
 
-    def generate_fragments(self, backends, clbits, searched_values: list[int])    :
+    def generate_fragments(self, backends : list[BackendWrapper], clbits, searched_values: list[int])    :
         self.folders.create(backends, False)
         self.generated_files = []
         self.found_files = []
+        failed_backends = []
 
         # Generamos fragmentos a alto nivel. Los transpilaremos en el bucle que ahí más abajo.
         high_level_generator = HighLevelGenerator()
@@ -38,14 +40,21 @@ class GroverGenerator:
 
         circuits = [h, *oracles, diffuser]
         for backend in backends:
-            #self._transpile_from("h", backend, circuits, clbits, searched_values)
-            self._transpile_from("oracle", backend, circuits, clbits, searched_values)
-            self._transpile_from("diffuser", backend, circuits, clbits, searched_values)
+            try :
+                #self._transpile_from("h", backend, circuits, clbits, searched_values)
+                self._transpile_from("oracle", backend, circuits, clbits, searched_values)
+                self._transpile_from("diffuser", backend, circuits, clbits, searched_values)
+            except Exception as exception:
+                failed_backends.append({
+                    "name": backend.name,
+                    "provider": backend.provider,
+                    "error": str(exception)
+                })
 
-        return self.generated_files, self.found_files
+        return self.generated_files, self.found_files, failed_backends
 
 
-    def _transpile_from(self, transpile_first, backend, circuits, clbits, searched_values):
+    def _transpile_from(self, transpile_first, backend : BackendWrapper, circuits, clbits, searched_values):
         h = circuits[0]
         oracles = circuits[1:-1]
         diffuser = circuits[-1]
@@ -126,7 +135,7 @@ class GroverGenerator:
             / f"{filename}.py"
         )
 
-    def _initial_transpile_and_save(self, circuit, backend, subfolder, circuit_type, transpile_first, clbits, searched_value=None):
+    def _initial_transpile_and_save(self, circuit, backend : BackendWrapper, subfolder, circuit_type, transpile_first, clbits, searched_value=None):
         target_filename = self._get_target_filename(subfolder, backend.name, circuit_type, transpile_first, clbits, searched_value)
         if target_filename.exists():
             self._found(target_filename)
@@ -146,7 +155,7 @@ class GroverGenerator:
             transpilation_time = float(transpilation_time_filename.read_text(encoding="utf-8").strip())
             return initial_layout, target_filename, transpilation_time, 0, 0
         transpiled_qc, initial_layout, transpilation_time = self._initial_transpile_for(circuit, backend)
-        code = generate_subcircuit(transpiled_qc, "get_qc", initial_layout, clbits)
+        code = generate_subcircuit(backend, transpiled_qc, "get_qc", initial_layout, clbits)
         self._save_artifacts(
             subfolder, backend.name, circuit_type, transpile_first, clbits,
             code, transpiled_qc,
@@ -159,7 +168,7 @@ class GroverGenerator:
         depth = transpiled_qc.depth()
         return initial_layout, target_filename, transpilation_time, gates, depth
 
-    def _transpile_and_save(self, circuit, backend, subfolder, circuit_type, transpile_first, clbits, initial_layout, searched_value=None):
+    def _transpile_and_save(self, circuit, backend : BackendWrapper, subfolder, circuit_type, transpile_first, clbits, initial_layout, searched_value=None):
         target_filename = self._get_target_filename(subfolder, backend.name, circuit_type, transpile_first, clbits, searched_value)
         if target_filename.exists():
             self._found(target_filename)
@@ -168,7 +177,7 @@ class GroverGenerator:
             transpilation_time = float(transpilation_time_filename.read_text(encoding="utf-8").strip())
             return target_filename, transpilation_time, 0, 0
         transpiled_qc, transpilation_time = self._transpile_for(circuit, backend, initial_layout=initial_layout)
-        code = generate_subcircuit(transpiled_qc, "get_qc", initial_layout, clbits)
+        code = generate_subcircuit(backend, transpiled_qc, "get_qc", initial_layout, clbits)
         self._save_artifacts(
             subfolder, backend.name, circuit_type, transpile_first, clbits,
             code, transpiled_qc,
@@ -184,7 +193,7 @@ class GroverGenerator:
 
     
 
-    def _initial_transpile_for(self, circuit, backend, optimization_level=3):
+    def _initial_transpile_for(self, circuit, backend : BackendWrapper, optimization_level=0):
         qc, transpilation_time = self._transpile_for(circuit, backend, initial_layout=None, optimization_level=optimization_level)
         if not qc.layout or not qc.layout.initial_layout:
             return qc, None, transpilation_time
@@ -198,12 +207,28 @@ class GroverGenerator:
             initial_layout.append(layout[qubit])
         return qc, initial_layout, transpilation_time
 
-    def _transpile_for(self, circuit: QuantumCircuit, backend, initial_layout, optimization_level = 3) :
+
+    IONQ_BASIS_GATES = [
+        "h", "x", "y", "z",
+        "rx", "ry", "rz",
+        "s", "sdg", "t", "tdg",
+        "cx", "cz", "swap", "p"
+    ]
+
+    def _transpile_for(self, circuit: QuantumCircuit, backend : BackendWrapper, initial_layout, optimization_level = 0) :
         transpilation_time = time.time()
-        qc = transpile(circuit, backend,
-               optimization_level=optimization_level, 
-               initial_layout = initial_layout
-        )
+        if backend.provider=="ionq" :
+            qc = transpile(
+                circuit, backend.backend,
+                #basis_gates=self.IONQ_BASIS_GATES,
+                initial_layout=initial_layout,
+                optimization_level=optimization_level
+            )         
+        else :
+            qc = transpile(circuit, backend.backend,
+                optimization_level=optimization_level, 
+                initial_layout = initial_layout
+            )
         transpilation_time = time.time() - transpilation_time
         #time_file_name = Path(file_name).with_name(Path(file_name).stem + "_transpilation_time.txt")
         #self.folders.save_file(time_file_name, str(transpilation_time))

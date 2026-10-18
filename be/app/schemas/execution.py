@@ -3,7 +3,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 class GroverExecutionRequest(BaseModel):
-    backends: list[str] = Field(default_factory=lambda: ["aer_simulator"])
+    backends: list[str] = Field(default_factory=list)
     qubits: list[int] = Field(min_length=1)
     searched_values: list[int] = Field(min_length=1)
     shots: list[int] = [ 1024 ]

@@ -44,7 +44,10 @@ class Folders:
             return os.path.join(self.root_folder, "fragments", fubfolder, backend_name, f"{circuit}_{prefix}{qubits}_{searched_value}.py")
 
     def get_name(self, backend):
-        return backend.name if not callable(backend.name) else backend.name()
+        name = backend.name if not callable(backend.name) else backend.name()
+        if backend.noise_model :
+            name = name + "_" + backend.noise_model
+        return name
 
     def create(self, backends, remove_old = False) :
         if remove_old:
@@ -61,8 +64,7 @@ class Folders:
 
         backend_names = [ "high_level"]
         for backend in backends :
-            backend_name = self.get_name(backend)
-            backend_names.append(backend_name)
+            backend_names.append(backend.name)
 
         for backend_name in backend_names :
             os.makedirs(self.root_folder + f"fragments/h/{backend_name}/", exist_ok=True)

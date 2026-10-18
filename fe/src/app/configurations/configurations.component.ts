@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ExecutionService } from '../execution.service';
 import { ExecuteFileRequest } from '../models/ExecutionFileRequest';
 import { ExecutionConfiguration } from '../models/ExecutionConfiguration';
-import { concatMap, finalize, from } from 'rxjs';
+import { catchError, concatMap, finalize, from, of, tap } from 'rxjs';
 
 
 type SortColumn =
@@ -26,6 +26,9 @@ export class ConfigurationsComponent implements OnInit {
   configurations: ExecutionConfiguration[] = [];
   selectedConfigurations = new Set<string>();
   executingSelected = false;
+  failedConfigurations = new Set<string>();
+  configurationErrors = new Map<string, string>();
+  successfulConfigurations = new Set<string>();
 
   loading = false;
   error = '';
@@ -56,7 +59,6 @@ export class ConfigurationsComponent implements OnInit {
     this.loadConfigurations();
   }
 
-
   loadConfigurations(): void {
     this.loading = true;
     this.error = '';
@@ -85,13 +87,11 @@ export class ConfigurationsComponent implements OnInit {
     )].sort();
   }
 
-
   get filenameValues(): string[] {
     return [...new Set(
       this.configurations.map(configuration => configuration.filename)
     )].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
   }
-
 
   get qubitsValues(): number[] {
     return [...new Set(
@@ -99,13 +99,11 @@ export class ConfigurationsComponent implements OnInit {
     )].sort((a, b) => a - b);
   }
 
-
   get transpiledFirstValues(): string[] {
     return [...new Set(
       this.configurations.map(configuration => configuration.transpiled_first)
     )].sort();
   }
-
 
   get searchedValues(): string[] {
     return [...new Set(
@@ -116,7 +114,6 @@ export class ConfigurationsComponent implements OnInit {
       a.localeCompare(b, undefined, { numeric: true })
     );
   }
-
 
   get filteredConfigurations(): ExecutionConfiguration[] {
     const configurations = this.configurations.filter(configuration =>
@@ -180,6 +177,9 @@ export class ConfigurationsComponent implements OnInit {
     });
   }
 
+  getConfigurationError(configuration: ExecutionConfiguration): string {
+    return this.configurationErrors.get(this.getConfigurationKey(configuration)) ?? '';
+  }
 
   sortConfigurations(column: SortColumn): void {
     if (this.sortColumn === column) {
@@ -189,7 +189,6 @@ export class ConfigurationsComponent implements OnInit {
       this.sortAscending = true;
     }
   }
-
 
   getSortIndicator(column: SortColumn): string {
     if (this.sortColumn !== column) {
@@ -208,7 +207,6 @@ export class ConfigurationsComponent implements OnInit {
     this.searchedValuesFilter = '';
   }
 
-
   execute(configuration: ExecutionConfiguration): void {
     const key = this.getConfigurationKey(configuration);
 
@@ -222,39 +220,44 @@ export class ConfigurationsComponent implements OnInit {
 
     this.executingConfiguration = key;
     this.error = '';
+    this.failedConfigurations.delete(key);
+    this.successfulConfigurations.delete(key);
 
     this.executionService.executeFile(request).subscribe({
       next: result => {
-        console.log('Execution result:', result);
+        this.successfulConfigurations.add(key);
+        this.failedConfigurations.delete(key);
         this.executingConfiguration = '';
       },
 
       error: error => {
-        this.error =
-          error.error?.detail ??
-          error.message ??
-          'Error executing configuration.';
-
+        error = error.error?.detail ?? error.message ?? 'Error executing configuration.';
+        this.failedConfigurations.add(key);
+        this.successfulConfigurations.delete(key);
+        this.configurationErrors.set(key, error);
         this.executingConfiguration = '';
       }
     });
   }
 
+  isConfigurationFailed(configuration: ExecutionConfiguration): boolean {
+    return this.failedConfigurations.has(this.getConfigurationKey(configuration));
+  }
+
+  isConfigurationSuccessful(configuration: ExecutionConfiguration): boolean {
+    return this.successfulConfigurations.has(this.getConfigurationKey(configuration));
+  }
 
   isExecuting(configuration: ExecutionConfiguration): boolean {
     return this.executingConfiguration ===
       this.getConfigurationKey(configuration);
   }
 
-
-  private getConfigurationKey(
-    configuration: ExecutionConfiguration
-  ): string {
+  private getConfigurationKey(configuration: ExecutionConfiguration): string {
     return `${configuration.origin}/${configuration.backend}/${configuration.filename}`;
   }
 
   showSource(configuration: ExecutionConfiguration): void {
-    this.selectedFilename = configuration.filename;
     this.selectedSource = '';
     this.sourceError = '';
     this.sourceLoading = true;
@@ -278,6 +281,7 @@ export class ConfigurationsComponent implements OnInit {
   isSelected(configuration: ExecutionConfiguration): boolean {
     return this.selectedConfigurations.has(this.getConfigurationKey(configuration));
   }
+
   toggleSelection(configuration: ExecutionConfiguration, selected: boolean): void {
     const key = this.getConfigurationKey(configuration);
     if (selected) {
@@ -286,18 +290,19 @@ export class ConfigurationsComponent implements OnInit {
       this.selectedConfigurations.delete(key);
     }
   }
+
   get selectedCount(): number {
     return this.selectedConfigurations.size;
   }
+
   executeSelected(): void {
-    const selected = this.configurations.filter(configuration =>
-      this.selectedConfigurations.has(this.getConfigurationKey(configuration))
-    );
+    const selected = this.configurations.filter(configuration => this.selectedConfigurations.has(this.getConfigurationKey(configuration)));
     if (selected.length === 0) return;
     this.executingSelected = true;
     this.error = '';
     from(selected).pipe(
       concatMap(configuration => {
+        const key = this.getConfigurationKey(configuration);
         const request: ExecuteFileRequest = {
           backend: configuration.backend,
           filename: configuration.filename,
@@ -305,8 +310,21 @@ export class ConfigurationsComponent implements OnInit {
           searched_values: configuration.searched_values,
           shots: this.shots
         };
-        this.executingConfiguration = this.getConfigurationKey(configuration);
-        return this.executionService.executeFile(request);
+        this.executingConfiguration = key;
+        this.failedConfigurations.delete(key);
+        this.successfulConfigurations.delete(key);
+        return this.executionService.executeFile(request).pipe(
+          tap(result => {
+            this.successfulConfigurations.add(key);
+            this.failedConfigurations.delete(key);
+          }),
+          catchError(error => {
+            this.failedConfigurations.add(key);
+            this.successfulConfigurations.delete(key);
+            this.error = error.error?.detail ?? error.message ?? 'Error executing configuration.';
+            return of(null);
+          })
+        );
       }),
       finalize(() => {
         this.executingConfiguration = '';
@@ -314,10 +332,9 @@ export class ConfigurationsComponent implements OnInit {
       })
     ).subscribe({
       next: result => {
-        console.log('Execution result:', result);
-      },
-      error: error => {
-        this.error = error.error?.detail ?? error.message ?? 'Error executing configurations.';
+        if (result) {
+          
+        }
       }
     });
   }

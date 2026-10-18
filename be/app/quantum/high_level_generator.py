@@ -18,7 +18,7 @@ class HighLevelGenerator:
         python_file_name = f"{self.folders.root_folder}fragments/h/high_level/h_{qubits}.py"
         h_circuit = self._h_column(qubits) # Lo genero, aunque ya exista, porque lo tengo que devolver para transpilarlo
         if not os.path.exists(python_file_name):
-            h_code = generate_subcircuit(h_circuit, function_name=f"get_h_{qubits}")
+            h_code = generate_subcircuit(None, h_circuit, function_name=f"get_h_{qubits}")
             self.folders.save_text(python_file_name, h_code)
             generated_files.append(python_file_name)
         else :
@@ -30,7 +30,7 @@ class HighLevelGenerator:
             oracle_circuit = self._oracle_circuit(searched_value, qubits) # Lo genero, aunque ya exista, porque lo tengo que devolver para transpilarlo
             oracles.append(oracle_circuit)
             if not os.path.exists(python_file_name):
-                oracle_code = generate_subcircuit(oracle_circuit, function_name=f"get_oracle_{qubits}_{searched_value}")
+                oracle_code = generate_subcircuit(None, oracle_circuit, function_name=f"get_oracle_{qubits}_{searched_value}")
                 self.folders.save_text(python_file_name, oracle_code)
                 generated_files.append(python_file_name)
             else:
@@ -39,7 +39,7 @@ class HighLevelGenerator:
         python_file_name = f"{self.folders.root_folder}fragments/diffusers/high_level/diffuser_{qubits}.py"
         diffuser_circuit = self._diffuser_circuit(qubits) # Lo genero, aunque ya exista, porque lo tengo que devolver para transpilarlo
         if not os.path.exists(python_file_name):
-            diffuser_code = generate_subcircuit(diffuser_circuit, function_name=f"get_diffuser_{qubits}")
+            diffuser_code = generate_subcircuit(None, diffuser_circuit, function_name=f"get_diffuser_{qubits}")
             self.folders.save_text(python_file_name, diffuser_code)
             generated_files.append(python_file_name)
         else:

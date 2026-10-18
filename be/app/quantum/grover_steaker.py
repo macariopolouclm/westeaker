@@ -5,10 +5,10 @@ from pathlib import Path
 
 from qiskit import QuantumCircuit
 
-from app.quantum.CircuitsAndCode import load_module, generate_subcircuit
+from app.quantum.CircuitsAndCode import load_module
 from app.quantum.Folders import Folders
 from app.quantum.grover_base import GroverBase
-from app.quantum.file_utils import get_transpilation_time, get_transpiled_first, get_initial_layout, get_circuit_from_module
+from app.quantum.file_utils import get_initial_layout, get_circuit_from_module
 
 from app.quantum.strategies.aer_steak_execution_strategy import AerSteakExecutionStrategy
 from app.quantum.strategies.standard_steak_execution_strategy import StandardSteakExecutionStrategy
