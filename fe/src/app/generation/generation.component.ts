@@ -5,12 +5,13 @@ import { GenerationService } from '../generation-service.service';
 import { GroverRequest, SavedGroverRequest } from '../models/GroverRequest';
 import { BackendInfo } from '../models/BackendInfo';
 import { FailedBackend } from '../models/FailedBackend';
+import { BackendSelectorComponent } from '../backend-selector/backend-selector.component';
 
 
 @Component({
   selector: 'app-generation',
   standalone: true,
-  imports: [FormsModule, JsonPipe],
+  imports: [FormsModule, JsonPipe, BackendSelectorComponent],
   templateUrl: './generation.component.html',
   styleUrl: './generation.component.css'
 })

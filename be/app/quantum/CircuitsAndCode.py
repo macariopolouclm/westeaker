@@ -76,14 +76,14 @@ def load_module(filename):
             if previous_module is not None:
                 sys.modules[name] = previous_module
 
-def generate_subcircuit(backend : BackendWrapper | None, circuit: QuantumCircuit, function_name: str | None, initial_layout=None, cl_bits=None) -> str:
+def generate_subcircuit(backend : BackendWrapper | None, circuit: QuantumCircuit, function_name: str | None, initial_layout=None, cl_bits=None, additional_code : str | None=None) -> str:
     if backend is not None and backend.provider=="ionq" :
-        return _generate_subcircuit_for_ionq(circuit, function_name, initial_layout, cl_bits)
+        return _generate_subcircuit_for_ionq(circuit, function_name, initial_layout, cl_bits, additional_code)
     else:
-        return _generate_subcircuit_for_other(circuit, function_name, initial_layout, cl_bits)
+        return _generate_subcircuit_for_other(circuit, function_name, initial_layout, cl_bits, additional_code)
     
 
-def _generate_subcircuit_for_ionq(circuit: QuantumCircuit, function_name: str | None, initial_layout=None, cl_bits=None) -> str :
+def _generate_subcircuit_for_ionq(circuit: QuantumCircuit, function_name: str | None, initial_layout=None, cl_bits=None, additional_code : str|None=None) -> str :
     indent = "    " if function_name is not None else ""
 
     if function_name is None:
@@ -100,6 +100,9 @@ def _generate_subcircuit_for_ionq(circuit: QuantumCircuit, function_name: str | 
             function_signature,
             f"    qc = QuantumCircuit({circuit.num_qubits}, {circuit.num_clbits}, name='{function_name}')",
         ]
+
+    if additional_code :
+        lines.append(additional_code)
 
     physical_to_logical = {}
 
@@ -244,6 +247,12 @@ def _generate_subcircuit_for_ionq(circuit: QuantumCircuit, function_name: str | 
         elif name == "zz":
             theta = repr(float(instruction.params[0]))
             lines.append(f"{indent}qc.append(ZZGate({theta}), {qubit_list(q_indices)})")
+        elif name == "cu":
+                    theta = repr(float(instruction.params[0]))
+                    phi = repr(float(instruction.params[1]))
+                    lam = repr(float(instruction.params[2]))
+                    gamma = repr(float(instruction.params[3]))
+                    lines.append(f"{indent}qc.cu({theta}, {phi}, {lam}, {gamma}, {qubit_ref(q_indices[0])}, {qubit_ref(q_indices[1])})")
         else:
             lines.append(f"{indent}qc.{name}({qubit_list(q_indices)})")
 
@@ -251,7 +260,7 @@ def _generate_subcircuit_for_ionq(circuit: QuantumCircuit, function_name: str | 
         lines.append("    return qc")
     return "\n".join(lines)
 
-def _generate_subcircuit_for_other(circuit: QuantumCircuit, function_name: str | None, initial_layout=None, cl_bits=None) -> str :
+def _generate_subcircuit_for_other(circuit: QuantumCircuit, function_name: str | None, initial_layout=None, cl_bits=None, additional_code : str | None=None) -> str :
     indent = "    " if function_name is not None else ""
 
     if function_name is None:
@@ -268,6 +277,8 @@ def _generate_subcircuit_for_other(circuit: QuantumCircuit, function_name: str |
             f"    qc = QuantumCircuit({circuit.num_qubits}, {circuit.num_clbits}, name='{function_name}')",
         ]
 
+    if additional_code :
+        lines.append(additional_code)
     physical_to_logical = {}
 
     if initial_layout is not None:
@@ -397,6 +408,12 @@ def _generate_subcircuit_for_other(circuit: QuantumCircuit, function_name: str |
                 f"{qubit_ref(q_indices[0])}, "
                 f"{qubit_ref(q_indices[1])})"
             )
+        elif name == "cu":
+            theta = repr(float(instruction.params[0]))
+            phi = repr(float(instruction.params[1]))
+            lam = repr(float(instruction.params[2]))
+            gamma = repr(float(instruction.params[3]))
+            lines.append(f"{indent}qc.cu({theta}, {phi}, {lam}, {gamma}, {qubit_ref(q_indices[0])}, {qubit_ref(q_indices[1])})")
         else:
             lines.append(f"{indent}qc.{name}({qubit_list(q_indices)})")
 

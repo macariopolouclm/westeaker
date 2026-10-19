@@ -46,6 +46,8 @@ class GroverExecutor():
             il_filename = root_folder / origin / backend.name / configuration_folder / "il.txt"
         elif origin == "whole_grovers":
             python_filename = root_folder / origin / backend.name / filename
+        elif origin == "others" :
+            python_filename = root_folder / origin / backend.name / filename
         else:
             raise ValueError(f"Unknown origin: {origin}")
 
@@ -63,7 +65,12 @@ class GroverExecutor():
             qc = module.qc
 
         counts, execution_time = run(backend.backend, qc, shots)
-        error = self.calculate_error(counts, searched_values)
+        expected = getattr(module, "expected", None)
+        if expected is not None:
+            error = self.calculate_error_non_uniform(expected, counts, shots)
+        else :
+            error = self.calculate_error(counts, searched_values)
+
         self.save_execution_result(backend.name, python_filename, shots, execution_time, error)
 
         return {
@@ -76,15 +83,19 @@ class GroverExecutor():
         }
 
 
+    def calculate_error_non_uniform(self, expected: list[tuple[int, float]], counts: dict[str, int], shots: int) -> float:
+        expected_probs = dict(expected)
+        observed_probs = {int(state.replace(" ", ""), 2): count / shots for state, count in counts.items()}
+        states = set(expected_probs) | set(observed_probs)
+        return 0.5 * sum(abs(expected_probs.get(state, 0.0) - observed_probs.get(state, 0.0)) for state in states)
+
     def calculate_error(self, counts: dict[str, int], searched_values: list[int]) -> float:
         total = sum(counts.values())
-
         correct = sum(
             count
             for bitstring, count in counts.items()
             if int(bitstring.replace(" ", ""), 2) in searched_values
         )
-
         return 1 - (correct / total)
 
     def save_execution_result(self, backend_name: str, filename: str, shots: int,

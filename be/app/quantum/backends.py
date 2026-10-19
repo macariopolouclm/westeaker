@@ -87,3 +87,7 @@ def get_backends(backend_infos: str | list | None) -> list[BackendWrapper]:
     if isinstance(backend_infos, str):
         backend_infos = [backend_infos]
     return [get_backend(backend_info) for backend_info in backend_infos]
+
+
+def get_all_backends() -> list[BackendWrapper]:
+    return list(BACKENDS.values())

@@ -66,6 +66,7 @@ class GroverExecutionService:
 
         composed_grovers_folder = root_folder / "composed_grovers"
         whole_grovers_folder = root_folder / "whole_grovers"
+        others_folder = root_folder / "others"
 
         configurations = []
 
@@ -122,14 +123,27 @@ class GroverExecutionService:
                         "searched_values": [int(value) for value in match.group(2).split("_")]
                     })
 
-        configurations.sort(
-            key=lambda configuration: (
-                configuration["backend"],
-                configuration["qubits"],
-                configuration["transpiled_first"],
-                configuration["searched_values"]
-            )
-        )
+        # Otros circuitos transpilados
+        if others_folder.exists():
+            for backend_folder in others_folder.iterdir():
+                if not backend_folder.is_dir():
+                    continue
+                for python_filename in backend_folder.glob("*.py"):
+                    configurations.append({
+                        "backend": backend_folder.name,
+                        "filename": python_filename.name,
+                        "origin": "others",
+                        "transpiled_first": "Other",
+                        "qubits": None,
+                        "searched_values": []
+                    })
+
+        configurations.sort(key=lambda configuration: (
+            configuration["backend"],
+            configuration["qubits"] if configuration["qubits"] is not None else -1,
+            configuration["transpiled_first"],
+            configuration["searched_values"]
+        ))
 
         return configurations
 

@@ -54,6 +54,13 @@ class WholeGroverGenerator:
     def _generate_for(self, backend : BackendWrapper, qc: QuantumCircuit, searched_values):
         values = "_".join(map(str, sorted(searched_values)))
         python_file_name = Path(self.folders.root_folder) / "whole_grovers" / f"{backend.name}" / f"grover_whole_{self.qubits}_{values}.py"
+        '''
+        qc = QuantumCircuit(2,2)
+        qc.h(0)
+        qc.cx(0,1)
+        qc.measure(0, 0)
+        qc.measure(1, 1)
+        '''
         transpiled_qc, transpilation_time, gates, depth = self._transpile_for(qc, backend, python_file_name, initial_layout=None)
         code = generate_subcircuit(backend, transpiled_qc, function_name=None, initial_layout=None, cl_bits=self.qubits)
         self.folders.save_text(python_file_name, code)

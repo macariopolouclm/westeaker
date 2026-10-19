@@ -1,0 +1,29 @@
+<div class="transpilation">
+  <h2>Transpilation</h2>
+  <div class="form-row">
+  <span class="hint">Paste Python code to be transpiled.</span>
+  <div class="code-editor">
+    <div class="code-editor-header">
+      <span>Python</span>
+    </div>
+    <div class="form-row">
+  <label>Filename</label>
+  <input type="text" [(ngModel)]="filename" placeholder="circuit.py">
+</div>
+    <textarea [(ngModel)]="code" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+  </div>
+</div>
+  <button type="button" class="transpile-button" (click)="transpile()" [disabled]="loading || selectedBackends.length === 0">
+    {{ loading ? 'Transpiling...' : 'Transpile' }}
+  </button>
+  @if (error) {
+    <div class="error">{{ error }}</div>
+  }
+  <app-backend-selector [availableBackends]="availableBackends" [(selectedBackends)]="selectedBackends" [failedBackends]="failedBackends"></app-backend-selector>
+  @for (result of results; track result.backend) {
+    <div class="result">
+      <h3>{{ result.backend }}</h3>
+      <pre>{{ result.code }}</pre>
+    </div>
+  }
+</div>

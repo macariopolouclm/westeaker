@@ -55,30 +55,7 @@
         </div>
 
 
-        <div class="form-row">
-            <label>
-                Backends
-            </label>
-            <span class="hint">
-                Backends for which you want to generate the code.
-            </span>
-            <div class="backend-actions">
-                <button type="button" (click)="selectAllBackends()">Select all</button>
-                <button type="button" (click)="invertBackendSelection()">Invert selection</button>
-            </div>
-            <div class="backends">
-                @for (backend of availableBackends; track backend.name) {
-                <label class="backend-option" [class.backend-failed]="isBackendFailed(backend)"
-                    [title]="getBackendFailure(backend)">
-                    <input type="checkbox" [checked]="isBackendSelected(backend)"
-                        (change)="toggleBackend(backend, $any($event.target).checked)">
-                    <span>{{ backend.name }} <small>· {{ backend.num_qubits }}q</small></span>
-                    @if (isBackendFailed(backend)) {
-                    }
-                </label>
-                }
-            </div>
-        </div>
+        <app-backend-selector [availableBackends]="availableBackends" [(selectedBackends)]="selectedBackends" [failedBackends]="failedBackends"></app-backend-selector>
 
 
         <div class="actions">
